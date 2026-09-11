@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BigFresh Orders</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#0a0a0a; --surface:#141414; --surface2:#1e1e1e; --border:#252525;
+  --gold:#81c04e; --gold-dim:#5a8a34; --cream:#f0e6c8; --text:#ddd8cc;
+  --text-muted:#8a887f; --text-dim:#5a5850; --danger:#e05555; --warn:#e0a44c;
+  --radius:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;line-height:1.5;}
+.wrap{max-width:960px;margin:0 auto;padding:24px 20px 60px;}
+
+/* ---- Login screen ---- */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:36px 32px;width:100%;max-width:360px;}
+.login-title{font-size:1.15rem;font-weight:700;color:var(--cream);margin-bottom:4px;}
+.login-sub{font-size:0.82rem;color:var(--text-muted);margin-bottom:24px;}
+.field-label{display:block;font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;font-weight:600;}
+.field-input{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--cream);font-size:0.9rem;outline:none;font-family:inherit;margin-bottom:14px;}
+.field-input:focus{border-color:var(--gold-dim);}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:var(--radius);border:none;font-size:0.85rem;cursor:pointer;font-family:inherit;font-weight:600;transition:background .15s;}
+.btn-gold{background:var(--gold);color:#12200a;width:100%;}
+.btn-gold:hover{background:#96d461;}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--gold-dim);}
+.login-error{font-size:0.78rem;color:var(--danger);min-height:18px;margin-bottom:6px;}
+
+/* ---- Dashboard shell ---- */
+#dashboard{display:none;}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap;}
+.brand{font-size:1.15rem;font-weight:700;color:var(--cream);}
+.brand span{color:var(--gold);}
+.account{display:flex;align-items:center;gap:12px;font-size:0.78rem;color:var(--text-muted);}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
+.stat-label{font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:4px;font-weight:600;}
+.stat-value{font-size:1.3rem;font-weight:700;color:var(--cream);}
+
+.tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+.tab{padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);font-size:0.78rem;font-weight:600;cursor:pointer;font-family:inherit;}
+.tab.active{border-color:var(--gold);color:var(--gold);background:rgba(129,192,78,0.1);}
+
+#ordersList{display:flex;flex-direction:column;gap:12px;}
+.order-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;}
+.order-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
+.order-code{font-size:0.95rem;font-weight:700;color:var(--cream);}
+.order-time{font-size:0.72rem;color:var(--text-dim);margin-top:2px;}
+.badge{padding:3px 10px;border-radius:12px;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;}
+.badge-submitted{background:rgba(224,164,76,0.15);color:var(--warn);}
+.badge-preparing{background:rgba(129,192,78,0.15);color:var(--gold);}
+.badge-ready{background:rgba(78,150,192,0.15);color:#6fb3d6;}
+.badge-completed{background:rgba(255,255,255,0.08);color:var(--text-muted);}
+.badge-cancelled{background:rgba(224,85,85,0.12);color:var(--danger);}
+
+.order-customer{font-size:0.85rem;color:var(--text);margin-bottom:2px;}
+.order-customer a{color:var(--gold);text-decoration:none;}
+.order-meta{font-size:0.75rem;color:var(--text-muted);margin-bottom:10px;}
+.order-items{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:10px 0;margin-bottom:10px;}
+.order-item-row{display:flex;justify-content:space-between;gap:10px;font-size:0.8rem;padding:3px 0;}
+.order-item-name{color:var(--cream);font-weight:600;}
+.order-item-detail{color:var(--text-muted);font-size:0.72rem;}
+.order-total{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.order-total-label{font-size:0.78rem;color:var(--text-muted);}
+.order-total-value{font-size:1rem;font-weight:700;color:var(--gold);}
+.order-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.order-actions .btn{padding:6px 12px;font-size:0.75rem;}
+.btn-danger{background:transparent;border:1px solid rgba(224,85,85,0.35);color:var(--danger);}
+.btn-danger:hover{background:rgba(224,85,85,0.1);}
+
+#emptyState,#accessDenied,#loadingState{text-align:center;padding:60px 20px;color:var(--text-muted);font-size:0.85rem;}
+#accessDenied{display:none;color:var(--danger);}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-title">BigFresh Orders</div>
+    <div class="login-sub">Sign in with the account BigFresh was given to view incoming orders.</div>
+    <label class="field-label">Email</label>
+    <input id="loginEmail" class="field-input" type="email" placeholder="orders@bigfresh.example" autocomplete="email">
+    <label class="field-label">Password</label>
+    <input id="loginPassword" class="field-input" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <div id="loginError" class="login-error"></div>
+    <button class="btn btn-gold" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
+<div id="dashboard">
+  <div class="wrap">
+    <header>
+      <div class="brand">Big<span>Fresh</span> Orders</div>
+      <div class="account">
+        <span id="accountEmail"></span>
+        <button class="btn btn-outline" onclick="doLogout()">Sign out</button>
+      </div>
+    </header>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-label">Orders today</div><div class="stat-value" id="statTodayCount">0</div></div>
+      <div class="stat"><div class="stat-label">Revenue today</div><div class="stat-value" id="statTodayRevenue">R0</div></div>
+      <div class="stat"><div class="stat-label">Active orders</div><div class="stat-value" id="statActiveCount">0</div></div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-filter="active" onclick="setFilter('active')">Active</button>
+      <button class="tab" data-filter="today" onclick="setFilter('today')">Today</button>
+      <button class="tab" data-filter="all" onclick="setFilter('all')">All</button>
+      <button class="tab" data-filter="completed" onclick="setFilter('completed')">Completed</button>
+    </div>
+
+    <div id="loadingState">Loading orders…</div>
+    <div id="accessDenied">This account doesn't have access to BigFresh orders. Ask the app owner to add it to the staff list.</div>
+    <div id="emptyState" style="display:none;">No orders in this view.</div>
+    <div id="ordersList"></div>
+  </div>
+</div>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyDSRmZMNc2-b_kPKIeZhorFIcqmi5UbQhA",
+  authDomain:        "bigfresh-mobile.firebaseapp.com",
+  projectId:         "bigfresh-mobile",
+  storageBucket:     "bigfresh-mobile.firebasestorage.app",
+  messagingSenderId: "434546513459",
+  appId:             "1:434546513459:web:fbbd4e92773b62f8317546"
+};
+
+let _auth = null, _db = null, _unsub = null;
+let _orders = [];
+let _filter = 'active';
+let _firstSnapshotSeen = false;
+
+function _initFirebase() {
+  if (typeof firebase === 'undefined') { setTimeout(_initFirebase, 200); return; }
+  const app = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp(FIREBASE_CONFIG);
+  _auth = firebase.auth();
+  _db = firebase.firestore();
+  _auth.onAuthStateChanged(user => {
+    if (user) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      document.getElementById('accountEmail').textContent = user.email || '';
+      startOrdersListener();
+    } else {
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+      if (_unsub) { _unsub(); _unsub = null; }
+      _orders = [];
+    }
+  });
+}
+_initFirebase();
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = 'Enter your email and password.'; return; }
+  try {
+    await _auth.signInWithEmailAndPassword(email, password);
+    document.getElementById('loginPassword').value = '';
+  } catch (e) {
+    const msgs = {
+      'auth/user-not-found': 'No account found for that email.',
+      'auth/wrong-password': 'Incorrect password.',
+      'auth/invalid-email': 'Invalid email address.',
+      'auth/invalid-credential': 'Email or password is incorrect.',
+      'auth/too-many-requests': 'Too many attempts — please wait and try again.',
+    };
+    errEl.textContent = msgs[e.code] || e.message;
+  }
+}
+
+function doLogout() {
+  if (_unsub) { _unsub(); _unsub = null; }
+  _auth.signOut();
+}
+
+function startOrdersListener() {
+  document.getElementById('loadingState').style.display = 'block';
+  document.getElementById('accessDenied').style.display = 'none';
+  _firstSnapshotSeen = false;
+  if (_unsub) _unsub();
+  _unsub = _db.collection('orders').orderBy('createdAt', 'desc').limit(300)
+    .onSnapshot(snapshot => {
+      document.getElementById('loadingState').style.display = 'none';
+      const isFirst = !_firstSnapshotSeen;
+      _firstSnapshotSeen = true;
+      if (!isFirst) {
+        const added = snapshot.docChanges().some(c => c.type === 'added');
+        if (added) _playChime();
+      }
+      _orders = snapshot.docs.map(d => Object.assign({ id: d.id }, d.data()));
+      renderOrders();
+    }, err => {
+      document.getElementById('loadingState').style.display = 'none';
+      if (err.code === 'permission-denied') {
+        document.getElementById('accessDenied').style.display = 'block';
+      } else {
+        document.getElementById('accessDenied').textContent = 'Could not load orders: ' + err.message;
+        document.getElementById('accessDenied').style.display = 'block';
+      }
+    });
+}
+
+function _playChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(); const g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = 880;
+    o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    o.start(); o.stop(ctx.currentTime + 0.5);
+  } catch (e) {}
+}
+
+function setFilter(f) {
+  _filter = f;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.filter === f));
+  renderOrders();
+}
+
+function _isToday(dateVal) {
+  if (!dateVal) return false;
+  const d = dateVal.toDate ? dateVal.toDate() : new Date(dateVal);
+  const now = new Date();
+  return d.toDateString() === now.toDateString();
+}
+
+function _fmtTime(dateVal) {
+  if (!dateVal) return '';
+  const d = dateVal.toDate ? dateVal.toDate() : new Date(dateVal);
+  return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function renderOrders() {
+  const todays = _orders.filter(o => _isToday(o.createdAt || o.createdAtLocal));
+  const active = _orders.filter(o => !['completed', 'cancelled'].includes(o.status));
+  document.getElementById('statTodayCount').textContent = todays.length;
+  document.getElementById('statTodayRevenue').textContent = 'R' + todays.reduce((s, o) => s + (o.total || 0), 0);
+  document.getElementById('statActiveCount').textContent = active.length;
+
+  let list = _orders;
+  if (_filter === 'today') list = todays;
+  else if (_filter === 'active') list = active;
+  else if (_filter === 'completed') list = _orders.filter(o => ['completed', 'cancelled'].includes(o.status));
+
+  const container = document.getElementById('ordersList');
+  const empty = document.getElementById('emptyState');
+  if (!list.length) {
+    container.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  container.innerHTML = list.map(o => {
+    const status = o.status || 'submitted';
+    const itemsHtml = (o.items || []).map(it => `
+      <div class="order-item-row">
+        <div>
+          <div class="order-item-name">${it.qty}&times; ${_esc(it.pizza)}</div>
+          <div class="order-item-detail">${_esc(it.details || '')}</div>
+        </div>
+        <div>R${it.lineTotal}</div>
+      </div>
+    `).join('');
+
+    const nextActions = _nextActions(status, o.id);
+
+    return `
+      <div class="order-card">
+        <div class="order-top">
+          <div>
+            <div class="order-code">#${_esc(o.code || o.id)}</div>
+            <div class="order-time">${_fmtTime(o.createdAt || o.createdAtLocal)}</div>
+          </div>
+          <span class="badge badge-${status}">${status}</span>
+        </div>
+        <div class="order-customer">${_esc(o.customerName || 'Unknown')} &middot; <a href="tel:${_esc(o.customerPhone || '')}">${_esc(o.customerPhone || '')}</a></div>
+        <div class="order-meta">${o.pickupTime ? 'Pickup: ' + _esc(o.pickupTime) : 'Pickup: ASAP'}</div>
+        <div class="order-items">${itemsHtml}</div>
+        <div class="order-total">
+          <span class="order-total-label">Total</span>
+          <span class="order-total-value">R${o.total || 0}</span>
+        </div>
+        <div class="order-actions">${nextActions}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function _nextActions(status, orderId) {
+  const flow = {
+    submitted:  [{ to: 'preparing', label: 'Start preparing' }],
+    preparing:  [{ to: 'ready', label: 'Mark ready' }],
+    ready:      [{ to: 'completed', label: 'Mark collected' }],
+  };
+  let html = '';
+  (flow[status] || []).forEach(step => {
+    html += `<button class="btn btn-gold" style="width:auto;" onclick="updateStatus('${orderId}','${step.to}')">${step.label}</button>`;
+  });
+  if (!['completed', 'cancelled'].includes(status)) {
+    html += `<button class="btn btn-danger" onclick="updateStatus('${orderId}','cancelled')">Cancel</button>`;
+  }
+  return html;
+}
+
+async function updateStatus(orderId, newStatus) {
+  try {
+    await _db.collection('orders').doc(orderId).update({
+      status: newStatus,
+      statusUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch (e) {
+    alert('Could not update order: ' + e.message);
+  }
+}
+
+function _esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+</script>
+</body>
+</html>
