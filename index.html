@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BigFresh Orders</title>
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem('bigfreshTheme');
+    if (!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -15,14 +24,31 @@
   --text-muted:#8a887f; --text-dim:#5a5850; --danger:#e05555; --warn:#e0a44c;
   --radius:8px;
 }
+html[data-theme="light"]{
+  --bg:#f6f4ee; --surface:#ffffff; --surface2:#f0ede2; --border:#e2ddcd;
+  --gold:#5f9438; --gold-dim:#4a7a2a; --cream:#241f14; --text:#3a3529;
+  --text-muted:#7a7566; --text-dim:#9a9587; --danger:#c53d3d; --warn:#b87a1e;
+}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;line-height:1.5;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;line-height:1.5;transition:background .2s,color .2s;}
 .wrap{max-width:960px;margin:0 auto;padding:24px 20px 60px;}
 
+/* ---- Theme toggle ---- */
+.theme-toggle{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s;}
+.theme-toggle:hover{border-color:var(--gold-dim);color:var(--cream);}
+.theme-toggle svg{width:16px;height:16px;}
+.theme-toggle .icon-moon{display:none;}
+html[data-theme="light"] .theme-toggle .icon-sun{display:none;}
+html[data-theme="light"] .theme-toggle .icon-moon{display:block;}
+.login-theme-toggle{position:absolute;top:16px;right:16px;}
+
 /* ---- Login screen ---- */
-#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+#loginScreen{display:none;min-height:100vh;align-items:center;justify-content:center;padding:24px;}
+#authLoading{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.spinner{width:28px;height:28px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--gold);animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
 .login-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:36px 32px;width:100%;max-width:360px;}
-.login-title{font-size:1.15rem;font-weight:700;color:var(--cream);margin-bottom:4px;}
+.login-title{font-size:1.15rem;font-weight:700;color:var(--cream);margin-bottom:4px;padding-right:44px;}
 .login-sub{font-size:0.82rem;color:var(--text-muted);margin-bottom:24px;}
 .field-label{display:block;font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;font-weight:600;}
 .field-input{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--cream);font-size:0.9rem;outline:none;font-family:inherit;margin-bottom:14px;}
@@ -79,12 +105,27 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;ma
 
 #emptyState,#accessDenied,#loadingState{text-align:center;padding:60px 20px;color:var(--text-muted);font-size:0.85rem;}
 #accessDenied{display:none;color:var(--danger);}
+
+/* ---- Power / Maintenance overlay modals ---- */
+.ov-modal{display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;}
+.ov-modal-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:32px 28px 24px;width:300px;max-width:90vw;text-align:center;}
+.ov-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+.ov-icon-danger{background:rgba(224,85,85,0.1);border:1px solid rgba(224,85,85,0.25);}
+.ov-icon-warn{background:rgba(224,164,76,0.1);border:1px solid rgba(224,164,76,0.25);}
+.ov-title{font-size:1rem;font-weight:700;color:var(--cream);margin-bottom:8px;}
+.ov-text{font-size:0.82rem;color:var(--text-muted);line-height:1.6;}
 </style>
 </head>
 <body>
 
+<div id="authLoading"><div class="spinner"></div></div>
+
 <div id="loginScreen">
-  <div class="login-card">
+  <div class="login-card" style="position:relative;">
+    <button class="theme-toggle login-theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z"/></svg>
+    </button>
     <div class="login-title">BigFresh Orders</div>
     <div class="login-sub">Sign in with the account BigFresh was given to view incoming orders.</div>
     <label class="field-label">Email</label>
@@ -102,6 +143,10 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;ma
       <div class="brand">Big<span>Fresh</span> Orders</div>
       <div class="account">
         <span id="accountEmail"></span>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z"/></svg>
+        </button>
         <button class="btn btn-outline" onclick="doLogout()">Sign out</button>
       </div>
     </header>
@@ -126,6 +171,29 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;ma
   </div>
 </div>
 
+<!-- Power Disabled Modal -->
+<div id="powerModal" class="ov-modal">
+  <div class="ov-modal-panel">
+    <div class="ov-icon ov-icon-danger">
+      <svg width="24" height="24" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.5 1L14 13H1L7.5 1Z" stroke="var(--danger)" stroke-width="1.3" stroke-linejoin="round"/><path d="M7.5 5.5v3" stroke="var(--danger)" stroke-width="1.3" stroke-linecap="round"/><circle cx="7.5" cy="10.5" r="0.5" fill="var(--danger)"/></svg>
+    </div>
+    <div class="ov-title">Application Disabled</div>
+    <div class="ov-text">This application has been disabled by the administrator. Please contact support for assistance.</div>
+  </div>
+</div>
+
+<!-- Maintenance Modal -->
+<div id="maintenanceModal" class="ov-modal">
+  <div class="ov-modal-panel">
+    <div class="ov-icon ov-icon-warn">
+      <svg width="24" height="24" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.5 1L14 13H1L7.5 1Z" stroke="var(--warn)" stroke-width="1.3" stroke-linejoin="round"/><path d="M7.5 5.5v3" stroke="var(--warn)" stroke-width="1.3" stroke-linecap="round"/><circle cx="7.5" cy="10.5" r="0.5" fill="var(--warn)"/></svg>
+    </div>
+    <div class="ov-title">Maintenance Mode</div>
+    <div class="ov-text" style="margin-bottom:18px;">The application is currently undergoing maintenance.</div>
+    <button class="btn btn-outline" onclick="dismissModal('maintenanceModal')">Dismiss</button>
+  </div>
+</div>
+
 <script>
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyDSRmZMNc2-b_kPKIeZhorFIcqmi5UbQhA",
@@ -136,10 +204,57 @@ const FIREBASE_CONFIG = {
   appId:             "1:434546513459:web:fbbd4e92773b62f8317546"
 };
 
+const UPDATE_MANIFEST_URL = 'https://gist.githubusercontent.com/Abscissa24/9a59ae158bfcd87518a4d8a9df5dedfb/raw/BigFresh.json';
+const MANIFEST_TIMEOUT_MS = 4000;
+
+// ── Theme ────────────────────────────────────────────────────
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('bigfreshTheme', next); } catch (e) {}
+}
+
 let _auth = null, _db = null, _unsub = null;
 let _orders = [];
 let _filter = 'active';
 let _firstSnapshotSeen = false;
+let _appDisabled = false;
+
+// ── Power / Maintenance modal ───────────────────────────────
+function presentModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.style.display = 'flex';
+}
+function dismissModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.style.display = 'none';
+}
+function _showPowerModal() { presentModal('powerModal'); }
+function _showMaintenanceModal() { presentModal('maintenanceModal'); }
+
+async function _checkManifestState() {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), MANIFEST_TIMEOUT_MS);
+    const res = await fetch(UPDATE_MANIFEST_URL + '?t=' + Date.now(), { cache: 'no-store', signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) return;
+    const manifest = await res.json();
+    const power = manifest.power !== false;
+    const maintenance = manifest.maintenance === true;
+    if (!power) {
+      _appDisabled = true;
+      document.getElementById('authLoading').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'none';
+      _showPowerModal();
+    } else if (maintenance) {
+      _showMaintenanceModal();
+    }
+  } catch (e) {}
+}
+_checkManifestState();
 
 function _initFirebase() {
   if (typeof firebase === 'undefined') { setTimeout(_initFirebase, 200); return; }
@@ -147,6 +262,8 @@ function _initFirebase() {
   _auth = firebase.auth();
   _db = firebase.firestore();
   _auth.onAuthStateChanged(user => {
+    if (_appDisabled) return;
+    document.getElementById('authLoading').style.display = 'none';
     if (user) {
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
