@@ -2,6 +2,8 @@
 
 <img src="https://raw.githubusercontent.com/Abscissa24/BigFresh/main/Assets/Media/logo.png" alt="BigFresh logo" width="160" />
 
+# BigFresh
+
 **Fresh pizza. Zero missed orders.**
 
 The official ordering app for BigFresh, Marburg: order in a few taps, collect loyalty rewards, and watch your pizza go from *Received* to *Ready* in real time.
@@ -12,6 +14,9 @@ The official ordering app for BigFresh, Marburg: order in a few taps, collect lo
 ![Platform](https://img.shields.io/badge/platform-Android-3ddc84?style=for-the-badge&logo=android&logoColor=white)
 ![Built with Tauri](https://img.shields.io/badge/built%20with-Tauri-24c8db?style=for-the-badge&logo=tauri&logoColor=white)
 ![Vite](https://img.shields.io/badge/bundled%20with-Vite-646cff?style=for-the-badge&logo=vite&logoColor=white)
+![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-f7df1e?style=for-the-badge&logo=javascript&logoColor=black)
 
 <br />
 
@@ -100,6 +105,8 @@ sequenceDiagram
 ## 🧰 Tech stack
 
 - **[Tauri](https://tauri.app/)** for the native Android shell
+- **[Rust](https://www.rust-lang.org/)** for the Tauri core and native backend layer
+- **[Kotlin](https://kotlinlang.org/)** for the Android platform integration
 - **HTML, CSS and JavaScript** in a lightweight single-page architecture
 - **[Vite](https://vitejs.dev/)** for bundling
 - **Google Sign-In** and cloud accounts for customer identity
@@ -148,11 +155,5 @@ BigFresh/
 ## 🤝 Contact
 
 Questions, feedback or a bug to report? Open an [issue](https://github.com/Abscissa24/BigFresh/issues).
-
-<div align="center">
-
-<br />
-
-Made with 🍕 and care for **BigFresh**, Marburg.
 
 </div>
