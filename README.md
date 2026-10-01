@@ -14,6 +14,7 @@ The official ordering app for BigFresh, Marburg: order in a few taps, collect lo
 ![Platform](https://img.shields.io/badge/platform-Android-3ddc84?style=for-the-badge&logo=android&logoColor=white)
 ![Built with Tauri](https://img.shields.io/badge/built%20with-Tauri-24c8db?style=for-the-badge&logo=tauri&logoColor=white)
 ![Vite](https://img.shields.io/badge/bundled%20with-Vite-646cff?style=for-the-badge&logo=vite&logoColor=white)
+<br />
 ![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-f7df1e?style=for-the-badge&logo=javascript&logoColor=black)
@@ -111,36 +112,6 @@ sequenceDiagram
 - **[Vite](https://vitejs.dev/)** for bundling
 - **Google Sign-In** and cloud accounts for customer identity
 - **Real-time backend** powering live order updates and the staff dashboard
-
-## 🚀 Getting started
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) 18 or newer
-- [Rust](https://www.rust-lang.org/tools/install)
-- [Android Studio](https://developer.android.com/studio) with the SDK and NDK installed (for Android builds)
-
-### Run locally
-
-```bash
-# Clone the repository
-git clone https://github.com/Abscissa24/BigFresh.git
-cd BigFresh
-
-# Install dependencies
-npm install
-
-# Start the dev server
-npm run dev
-```
-
-### Build for Android
-
-```bash
-npm run tauri android build
-```
-
-The generated APK is written to the Tauri Android build output directory.
 
 ## 🗂️ Repository
 
