@@ -2,15 +2,13 @@
 
 <img src="https://raw.githubusercontent.com/Abscissa24/BigFresh/main/Assets/Media/logo.png" alt="BigFresh logo" width="160" />
 
-# BigFresh
-
 **Fresh pizza. Zero missed orders.**
 
 The official ordering app for BigFresh, Marburg: order in a few taps, collect loyalty rewards, and watch your pizza go from *Received* to *Ready* in real time.
 
 <br />
 
-![Version](https://img.shields.io/badge/version-1.0.1-e63946?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.0.6-e63946?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/platform-Android-3ddc84?style=for-the-badge&logo=android&logoColor=white)
 ![Built with Tauri](https://img.shields.io/badge/built%20with-Tauri-24c8db?style=for-the-badge&logo=tauri&logoColor=white)
 ![Vite](https://img.shields.io/badge/bundled%20with-Vite-646cff?style=for-the-badge&logo=vite&logoColor=white)
