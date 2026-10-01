@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BigFresh Orders</title>
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem('bigfreshTheme');
+    if (!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { document.documentElement.setAttribute('data-theme', 'dark'); }
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -15,14 +24,31 @@
   --text-muted:#8a887f; --text-dim:#5a5850; --danger:#e05555; --warn:#e0a44c;
   --radius:8px;
 }
+html[data-theme="light"]{
+  --bg:#f6f4ee; --surface:#ffffff; --surface2:#f0ede2; --border:#e2ddcd;
+  --gold:#5f9438; --gold-dim:#4a7a2a; --cream:#241f14; --text:#3a3529;
+  --text-muted:#7a7566; --text-dim:#9a9587; --danger:#c53d3d; --warn:#b87a1e;
+}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;line-height:1.5;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;line-height:1.5;transition:background .2s,color .2s;}
 .wrap{max-width:960px;margin:0 auto;padding:24px 20px 60px;}
 
+/* ---- Theme toggle ---- */
+.theme-toggle{width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:border-color .15s,color .15s;}
+.theme-toggle:hover{border-color:var(--gold-dim);color:var(--cream);}
+.theme-toggle svg{width:16px;height:16px;}
+.theme-toggle .icon-moon{display:none;}
+html[data-theme="light"] .theme-toggle .icon-sun{display:none;}
+html[data-theme="light"] .theme-toggle .icon-moon{display:block;}
+.login-theme-toggle{position:absolute;top:16px;right:16px;}
+
 /* ---- Login screen ---- */
-#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+#loginScreen{display:none;min-height:100vh;align-items:center;justify-content:center;padding:24px;}
+#authLoading{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.spinner{width:28px;height:28px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--gold);animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
 .login-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:36px 32px;width:100%;max-width:360px;}
-.login-title{font-size:1.15rem;font-weight:700;color:var(--cream);margin-bottom:4px;}
+.login-title{font-size:1.15rem;font-weight:700;color:var(--cream);margin-bottom:4px;padding-right:44px;}
 .login-sub{font-size:0.82rem;color:var(--text-muted);margin-bottom:24px;}
 .field-label{display:block;font-size:0.68rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;font-weight:600;}
 .field-input{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--cream);font-size:0.9rem;outline:none;font-family:inherit;margin-bottom:14px;}
@@ -40,6 +66,36 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;ma
 .brand{font-size:1.15rem;font-weight:700;color:var(--cream);}
 .brand span{color:var(--gold);}
 .account{display:flex;align-items:center;gap:12px;font-size:0.78rem;color:var(--text-muted);}
+
+/* ---- Search ---- */
+.search{position:relative;margin-bottom:14px;}
+.search-box{display:flex;align-items:center;gap:10px;height:46px;padding:0 10px 0 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;transition:border-color .15s,box-shadow .15s;}
+.search-box:focus-within{border-color:var(--gold-dim);box-shadow:0 0 0 3px rgba(129,192,78,0.13);}
+.search-icon{width:17px;height:17px;color:var(--text-dim);flex-shrink:0;transition:color .15s;}
+.search-box:focus-within .search-icon{color:var(--gold);}
+.search-input{flex:1;min-width:0;height:100%;background:transparent;border:none;outline:none;color:var(--cream);font-size:0.92rem;font-family:inherit;}
+.search-input::placeholder{color:var(--text-dim);}
+.search-input::-webkit-search-cancel-button{display:none;}
+.search-kbd{font-size:0.68rem;font-weight:600;color:var(--text-dim);border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:1px 6px;background:var(--surface2);}
+.search-box:focus-within .search-kbd,.search.has-text .search-kbd{display:none;}
+@media (hover:none){.search-kbd{display:none;}}
+.search-clear{display:none;width:24px;height:24px;border:none;border-radius:50%;background:var(--surface2);color:var(--text-muted);cursor:pointer;align-items:center;justify-content:center;flex-shrink:0;}
+.search-clear:hover{color:var(--cream);}
+.search-clear svg{width:12px;height:12px;}
+.search.has-text .search-clear{display:inline-flex;}
+.search-help{display:none;position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:20;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;box-shadow:0 12px 32px rgba(0,0,0,0.28);}
+.search:focus-within:not(.has-text) .search-help{display:block;}
+.search-help-title{font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;margin-bottom:8px;}
+.chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{padding:5px 11px;border-radius:16px;border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);font-size:0.75rem;font-weight:500;cursor:pointer;font-family:inherit;transition:border-color .15s,color .15s;}
+.chip:hover{border-color:var(--gold-dim);color:var(--cream);}
+.search-help-foot{margin-top:10px;font-size:0.72rem;color:var(--text-dim);line-height:1.6;}
+.search-help-foot code{font-family:inherit;color:var(--text-muted);background:var(--surface2);border-radius:4px;padding:0 5px;}
+.search-meta{display:none;align-items:center;justify-content:space-between;gap:10px;font-size:0.74rem;color:var(--text-muted);margin-top:8px;padding:0 4px;}
+.search-meta.show{display:flex;}
+.search-meta button{background:none;border:none;color:var(--gold);font-size:0.74rem;font-weight:600;cursor:pointer;font-family:inherit;}
+mark.hl{background:rgba(129,192,78,0.28);color:inherit;border-radius:3px;padding:0 1px;}
+.empty-link{background:none;border:none;color:var(--gold);font:inherit;font-weight:600;cursor:pointer;text-decoration:underline;}
 
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
 .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
@@ -79,12 +135,27 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;ma
 
 #emptyState,#accessDenied,#loadingState{text-align:center;padding:60px 20px;color:var(--text-muted);font-size:0.85rem;}
 #accessDenied{display:none;color:var(--danger);}
+
+/* ---- Power / Maintenance overlay modals ---- */
+.ov-modal{display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;}
+.ov-modal-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:32px 28px 24px;width:300px;max-width:90vw;text-align:center;}
+.ov-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+.ov-icon-danger{background:rgba(224,85,85,0.1);border:1px solid rgba(224,85,85,0.25);}
+.ov-icon-warn{background:rgba(224,164,76,0.1);border:1px solid rgba(224,164,76,0.25);}
+.ov-title{font-size:1rem;font-weight:700;color:var(--cream);margin-bottom:8px;}
+.ov-text{font-size:0.82rem;color:var(--text-muted);line-height:1.6;}
 </style>
 </head>
 <body>
 
+<div id="authLoading"><div class="spinner"></div></div>
+
 <div id="loginScreen">
-  <div class="login-card">
+  <div class="login-card" style="position:relative;">
+    <button class="theme-toggle login-theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+      <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z"/></svg>
+    </button>
     <div class="login-title">BigFresh Orders</div>
     <div class="login-sub">Sign in with the account BigFresh was given to view incoming orders.</div>
     <label class="field-label">Email</label>
@@ -102,6 +173,10 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;ma
       <div class="brand">Big<span>Fresh</span> Orders</div>
       <div class="account">
         <span id="accountEmail"></span>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z"/></svg>
+        </button>
         <button class="btn btn-outline" onclick="doLogout()">Sign out</button>
       </div>
     </header>
@@ -110,6 +185,28 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;ma
       <div class="stat"><div class="stat-label">Orders today</div><div class="stat-value" id="statTodayCount">0</div></div>
       <div class="stat"><div class="stat-label">Revenue today</div><div class="stat-value" id="statTodayRevenue">R0</div></div>
       <div class="stat"><div class="stat-label">Active orders</div><div class="stat-value" id="statActiveCount">0</div></div>
+    </div>
+
+    <div class="search" id="search">
+      <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="searchInput" class="search-input" type="search" placeholder="Search orders, names, phone numbers, pizzas…" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Search orders">
+        <kbd class="search-kbd" aria-hidden="true">/</kbd>
+        <button class="search-clear" id="searchClear" type="button" aria-label="Clear search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="search-help">
+        <div class="search-help-title">Quick filters</div>
+        <div class="chips">
+          <button class="chip" type="button" data-q="status:submitted">New</button>
+          <button class="chip" type="button" data-q="status:preparing">Preparing</button>
+          <button class="chip" type="button" data-q="status:ready">Ready</button>
+          <button class="chip" type="button" data-q="is:today">Today</button>
+          <button class="chip" type="button" data-q="total:>200">Over R200</button>
+          <button class="chip" type="button" data-q="pickup:asap">ASAP</button>
+        </div>
+        <div class="search-help-foot">Just type to search everything. Combine words to narrow down, or use <code>name:</code> <code>phone:</code> <code>item:</code> <code>total:&gt;150</code> <code>-word</code> to exclude, <code>"quotes"</code> for exact phrases.</div>
+      </div>
+      <div class="search-meta" id="searchMeta"></div>
     </div>
 
     <div class="tabs" id="tabs">
@@ -126,6 +223,29 @@ header{display:flex;align-items:center;justify-content:space-between;gap:16px;ma
   </div>
 </div>
 
+<!-- Power Disabled Modal -->
+<div id="powerModal" class="ov-modal">
+  <div class="ov-modal-panel">
+    <div class="ov-icon ov-icon-danger">
+      <svg width="24" height="24" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.5 1L14 13H1L7.5 1Z" stroke="var(--danger)" stroke-width="1.3" stroke-linejoin="round"/><path d="M7.5 5.5v3" stroke="var(--danger)" stroke-width="1.3" stroke-linecap="round"/><circle cx="7.5" cy="10.5" r="0.5" fill="var(--danger)"/></svg>
+    </div>
+    <div class="ov-title">Application Disabled</div>
+    <div class="ov-text">This application has been disabled by the administrator. Please contact support for assistance.</div>
+  </div>
+</div>
+
+<!-- Maintenance Modal -->
+<div id="maintenanceModal" class="ov-modal">
+  <div class="ov-modal-panel">
+    <div class="ov-icon ov-icon-warn">
+      <svg width="24" height="24" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.5 1L14 13H1L7.5 1Z" stroke="var(--warn)" stroke-width="1.3" stroke-linejoin="round"/><path d="M7.5 5.5v3" stroke="var(--warn)" stroke-width="1.3" stroke-linecap="round"/><circle cx="7.5" cy="10.5" r="0.5" fill="var(--warn)"/></svg>
+    </div>
+    <div class="ov-title">Maintenance Mode</div>
+    <div class="ov-text" style="margin-bottom:18px;">The application is currently undergoing maintenance.</div>
+    <button class="btn btn-outline" onclick="dismissModal('maintenanceModal')">Dismiss</button>
+  </div>
+</div>
+
 <script>
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyDSRmZMNc2-b_kPKIeZhorFIcqmi5UbQhA",
@@ -136,10 +256,57 @@ const FIREBASE_CONFIG = {
   appId:             "1:434546513459:web:fbbd4e92773b62f8317546"
 };
 
+const UPDATE_MANIFEST_URL = 'https://gist.githubusercontent.com/Abscissa24/9a59ae158bfcd87518a4d8a9df5dedfb/raw/BigFresh.json';
+const MANIFEST_TIMEOUT_MS = 4000;
+
+// ── Theme ────────────────────────────────────────────────────
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  try { localStorage.setItem('bigfreshTheme', next); } catch (e) {}
+}
+
 let _auth = null, _db = null, _unsub = null;
 let _orders = [];
 let _filter = 'active';
 let _firstSnapshotSeen = false;
+let _appDisabled = false;
+
+// ── Power / Maintenance modal ───────────────────────────────
+function presentModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.style.display = 'flex';
+}
+function dismissModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.style.display = 'none';
+}
+function _showPowerModal() { presentModal('powerModal'); }
+function _showMaintenanceModal() { presentModal('maintenanceModal'); }
+
+async function _checkManifestState() {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), MANIFEST_TIMEOUT_MS);
+    const res = await fetch(UPDATE_MANIFEST_URL + '?t=' + Date.now(), { cache: 'no-store', signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) return;
+    const manifest = await res.json();
+    const power = manifest.power !== false;
+    const maintenance = manifest.maintenance === true;
+    if (!power) {
+      _appDisabled = true;
+      document.getElementById('authLoading').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'none';
+      _showPowerModal();
+    } else if (maintenance) {
+      _showMaintenanceModal();
+    }
+  } catch (e) {}
+}
+_checkManifestState();
 
 function _initFirebase() {
   if (typeof firebase === 'undefined') { setTimeout(_initFirebase, 200); return; }
@@ -147,6 +314,8 @@ function _initFirebase() {
   _auth = firebase.auth();
   _db = firebase.firestore();
   _auth.onAuthStateChanged(user => {
+    if (_appDisabled) return;
+    document.getElementById('authLoading').style.display = 'none';
     if (user) {
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
@@ -228,6 +397,157 @@ function _playChime() {
   } catch (e) {}
 }
 
+// ── Search ───────────────────────────────────────────────────
+let _query = '';
+let _terms = [];
+
+const _KEY_ALIASES = {
+  status:'status', s:'status',
+  name:'name', customer:'name', n:'name',
+  phone:'phone', tel:'phone', p:'phone',
+  item:'item', pizza:'item', i:'item',
+  code:'code', id:'code', order:'code', '#':'code',
+  pickup:'pickup', time:'pickup',
+  total:'total', price:'total', t:'total',
+  is:'is'
+};
+
+function _parseQuery(q) {
+  const terms = [];
+  const re = /(-?)(?:([a-zA-Z#]+):)?(?:"([^"]*)"|(\S+))/g;
+  let m;
+  while ((m = re.exec(q))) {
+    let neg = m[1] === '-';
+    let key = m[2] ? _KEY_ALIASES[m[2].toLowerCase()] : null;
+    let val = (m[3] != null ? m[3] : m[4]) || '';
+    if (m[2] && !key) { val = m[2] + ':' + val; }      // unknown prefix → plain text
+    val = val.trim();
+    if (!val) continue;
+    terms.push({ neg, key, val: val.toLowerCase(), raw: val });
+  }
+  return terms;
+}
+
+function _numTest(expr, n) {
+  const m = expr.match(/^(>=|<=|>|<|=)?\s*r?(\d+(?:\.\d+)?)$/i);
+  if (m) {
+    const v = parseFloat(m[2]);
+    switch (m[1]) {
+      case '>': return n > v; case '<': return n < v;
+      case '>=': return n >= v; case '<=': return n <= v;
+      default: return n === v;
+    }
+  }
+  const r = expr.match(/^r?(\d+(?:\.\d+)?)\s*[-–]\s*r?(\d+(?:\.\d+)?)$/i);
+  if (r) return n >= parseFloat(r[1]) && n <= parseFloat(r[2]);
+  return String(n).includes(expr.replace(/^r/i, ''));
+}
+
+function _orderFields(o) {
+  const phone = String(o.customerPhone || '');
+  return {
+    code:   String(o.code || o.id || '').toLowerCase(),
+    name:   String(o.customerName || '').toLowerCase(),
+    phone:  (phone + ' ' + phone.replace(/\D/g, '')).toLowerCase(),
+    pickup: String(o.pickupTime || 'asap').toLowerCase(),
+    status: String(o.status || 'submitted').toLowerCase(),
+    item:   (o.items || []).map(it => (it.pizza || '') + ' ' + (it.details || '')).join(' | ').toLowerCase(),
+    time:   _fmtTime(o.createdAt || o.createdAtLocal).toLowerCase(),
+    total:  Number(o.total || 0)
+  };
+}
+
+function _termMatches(t, o, f) {
+  const v = t.val;
+  switch (t.key) {
+    case 'status': return f.status.startsWith(v) || (v === 'new' && f.status === 'submitted');
+    case 'name':   return f.name.includes(v);
+    case 'phone':  return f.phone.includes(v.replace(/[\s-]/g, ''));
+    case 'item':   return f.item.includes(v);
+    case 'code':   return f.code.includes(v.replace(/^#/, ''));
+    case 'pickup': return f.pickup.includes(v);
+    case 'total':  return _numTest(v, f.total);
+    case 'is': {
+      if (v === 'today')  return _isToday(o.createdAt || o.createdAtLocal);
+      if (v === 'active') return !['completed', 'cancelled'].includes(f.status);
+      if (v === 'done' || v === 'closed') return ['completed', 'cancelled'].includes(f.status);
+      return f.status.startsWith(v);
+    }
+  }
+  // plain term: search everything
+  const hay = [f.code, f.name, f.phone, f.pickup, f.status, f.item, f.time, 'r' + f.total].join('\n');
+  if (hay.includes(v.replace(/^#/, ''))) return true;
+  if (v === 'new' && f.status === 'submitted') return true;
+  const digits = v.replace(/[\s-]/g, '');
+  return /^\d+$/.test(digits) && f.phone.includes(digits);
+}
+
+function _matchesSearch(o) {
+  if (!_terms.length) return true;
+  const f = _orderFields(o);
+  return _terms.every(t => _termMatches(t, o, f) !== t.neg);
+}
+
+function _hl(text) {
+  const s = String(text == null ? '' : text);
+  const words = _terms
+    .filter(t => !t.neg && t.key !== 'is' && t.key !== 'total')
+    .map(t => t.raw.replace(/^#/, ''))
+    .filter(w => w.length);
+  if (!words.length) return _esc(s);
+  const re = new RegExp('(' + words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi');
+  return s.split(re).map((part, i) => i % 2 ? '<mark class="hl">' + _esc(part) + '</mark>' : _esc(part)).join('');
+}
+
+function setSearch(q) {
+  _query = q;
+  _terms = _parseQuery(q);
+  const input = document.getElementById('searchInput');
+  if (input.value !== q) input.value = q;
+  document.getElementById('search').classList.toggle('has-text', q.length > 0);
+  renderOrders();
+}
+
+function _updateSearchMeta(shown, inTab) {
+  const el = document.getElementById('searchMeta');
+  if (!_terms.length) { el.className = 'search-meta'; el.innerHTML = ''; return; }
+  const all = _orders.filter(_matchesSearch).length;
+  let html = '<span>' + shown + ' result' + (shown === 1 ? '' : 's') + (_filter !== 'all' ? ' in this view' : '') + '</span>';
+  if (_filter !== 'all' && all > shown) {
+    html += '<button type="button" onclick="setFilter(\'all\')">Search all (' + all + ')</button>';
+  }
+  el.innerHTML = html;
+  el.className = 'search-meta show';
+}
+
+(function initSearch() {
+  const input = document.getElementById('searchInput');
+  let timer = null;
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => setSearch(input.value), 90);
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (input.value) { setSearch(''); } else { input.blur(); }
+    }
+  });
+  document.getElementById('searchClear').addEventListener('click', () => { setSearch(''); input.focus(); });
+  document.querySelectorAll('.search-help .chip').forEach(c => {
+    c.addEventListener('mousedown', e => e.preventDefault());   // keep focus in the input
+    c.addEventListener('click', () => { setSearch(c.dataset.q); input.focus(); });
+  });
+  document.addEventListener('keydown', e => {
+    const tag = (e.target.tagName || '').toLowerCase();
+    const typing = tag === 'input' || tag === 'textarea' || e.target.isContentEditable;
+    const hotkey = (e.key === '/' && !typing) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k');
+    if (hotkey && document.getElementById('dashboard').style.display === 'block') {
+      e.preventDefault();
+      input.focus(); input.select();
+    }
+  });
+})();
+
 function setFilter(f) {
   _filter = f;
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.filter === f));
@@ -259,10 +579,20 @@ function renderOrders() {
   else if (_filter === 'active') list = active;
   else if (_filter === 'completed') list = _orders.filter(o => ['completed', 'cancelled'].includes(o.status));
 
+  if (_terms.length) list = list.filter(_matchesSearch);
+  _updateSearchMeta(list.length);
+
   const container = document.getElementById('ordersList');
   const empty = document.getElementById('emptyState');
   if (!list.length) {
     container.innerHTML = '';
+    if (_terms.length) {
+      const all = _orders.filter(_matchesSearch).length;
+      empty.innerHTML = 'No orders match <strong>' + _esc(_query) + '</strong>.' +
+        (all && _filter !== 'all' ? ' <button class="empty-link" type="button" onclick="setFilter(\'all\')">Show ' + all + ' in All</button>' : '');
+    } else {
+      empty.textContent = 'No orders in this view.';
+    }
     empty.style.display = 'block';
     return;
   }
@@ -273,8 +603,8 @@ function renderOrders() {
     const itemsHtml = (o.items || []).map(it => `
       <div class="order-item-row">
         <div>
-          <div class="order-item-name">${it.qty}&times; ${_esc(it.pizza)}</div>
-          <div class="order-item-detail">${_esc(it.details || '')}</div>
+          <div class="order-item-name">${it.qty}&times; ${_hl(it.pizza)}</div>
+          <div class="order-item-detail">${_hl(it.details || '')}</div>
         </div>
         <div>R${it.lineTotal}</div>
       </div>
@@ -286,13 +616,13 @@ function renderOrders() {
       <div class="order-card">
         <div class="order-top">
           <div>
-            <div class="order-code">#${_esc(o.code || o.id)}</div>
-            <div class="order-time">${_fmtTime(o.createdAt || o.createdAtLocal)}</div>
+            <div class="order-code">#${_hl(o.code || o.id)}</div>
+            <div class="order-time">${_hl(_fmtTime(o.createdAt || o.createdAtLocal))}</div>
           </div>
-          <span class="badge badge-${status}">${status}</span>
+          <span class="badge badge-${status}">${_hl(status)}</span>
         </div>
-        <div class="order-customer">${_esc(o.customerName || 'Unknown')} &middot; <a href="tel:${_esc(o.customerPhone || '')}">${_esc(o.customerPhone || '')}</a></div>
-        <div class="order-meta">${o.pickupTime ? 'Pickup: ' + _esc(o.pickupTime) : 'Pickup: ASAP'}</div>
+        <div class="order-customer">${_hl(o.customerName || 'Unknown')} &middot; <a href="tel:${_esc(o.customerPhone || '')}">${_hl(o.customerPhone || '')}</a></div>
+        <div class="order-meta">${o.pickupTime ? 'Pickup: ' + _hl(o.pickupTime) : 'Pickup: ' + _hl('ASAP')}</div>
         <div class="order-items">${itemsHtml}</div>
         <div class="order-total">
           <span class="order-total-label">Total</span>
